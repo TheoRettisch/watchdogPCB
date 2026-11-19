@@ -1,0 +1,21 @@
+** Drc report for dhw.kicad_pcb **
+** Created on 2026-11-16T15:06:29 **
+** Report includes: Errors, Warnings **
+
+** Found 0 DRC violations **
+
+** Found 0 unconnected pads **
+
+** Found 1 Footprint errors **
+[net_conflict]: Pad net (/MONO_RC) doesn't match net given by schematic (unconnected-(C1-Pad1))
+    Local override; warning
+    @(157.7340 mm, 85.0900 mm): PTH pad 1 [/MONO_RC] of C1
+
+** Ignored checks **
+    - Footprint has no courtyard defined
+    - Track endpoint not centered on via
+    - Tuning profile track geometries
+    - Footprint doesn't match symbol's footprint filters
+    - Footprint component type doesn't match footprint pads
+
+** End of Report **

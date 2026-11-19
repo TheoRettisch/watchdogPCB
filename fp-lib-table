@@ -1,0 +1,4 @@
+(fp_lib_table
+	(version 7)
+	(lib (name "Watchdog") (type "KiCad") (uri "${KIPRJMOD}/libs/Watchdog.pretty") (options "") (descr "Project footprints absent from the KiCad 10 standard libraries"))
+)

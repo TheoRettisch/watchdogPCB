@@ -1,0 +1,57 @@
+* tb_gate_driver.cir
+* DHW watchdog -- Q1 FQP27P06 P-channel high-side switch gate drive + Z1 clamp
+* Topology:
+*   +12V --R9(100k)--+--Z1(BZX55C12, anode here / cathode +12V)
+*                    +-- Q1 gate
+*                    +--R8(10k)-- Q2 collector
+*   Q2 (2N3904) pulls its collector low when the watchdog is HEALTHY (heartbeat
+*   present AND no fault). When UNHEALTHY, Q2 is off and R9 pulls the gate to +12V.
+*   P-MOS source = +12V, so:
+*       healthy  -> gate pulled toward GND -> Vsg large -> Q1 ON  -> AMP_REM live
+*       unhealthy-> gate = +12V             -> Vsg = 0   -> Q1 OFF -> AMP_REM dead (fail-off)
+* Question: does the R8/R9 divider give enough Vsg to fully enhance Q1 when healthy,
+*           does the gate return to +12V (Q1 off) when unhealthy, and does Z1 keep
+*           Vsg within the FQP27P06 +/-25V Vgs(max)?
+* Trust: gate-node voltages & Z1 margin are EXACT (passives+zener).
+*        Q1 on/off and AMP_REM are MEDIUM (generic PMOS model, VTO=-3V representative
+*        of FQP27P06 Vgs(th) ~ -2 to -4V).
+
+V12   p12 0 12
+
+* Gate network
+R9    p12 gate 100k
+R8    gate q2coll 10k
+* Z1 BZX55C12 gate clamp: cathode to +12V, anode to gate
+DZ    gate p12 ZEN12
+.model ZEN12 D(BV=12 IBV=5m N=1.05 RS=8)
+
+* Q2 (2N3904) modelled as a switch from collector to CAR_GND.
+* health=1 -> Q2 saturated (collector ~Vce_sat); health=0 -> Q2 off (open)
+Vhealth ctrl 0 0
+S1    q2coll 0 ctrl 0 QSW
+.model QSW SW(Ron=60 Roff=1e9 Vt=0.5 Vh=0)
+
+* Q1 FQP27P06 P-MOS high-side switch (generic level-1 PMOS, large W/L ~ low Rds(on))
+M1    drain gate p12 p12 PMOSQ1 W=5000u L=1u
+.model PMOSQ1 PMOS(VTO=-3 KP=20u LAMBDA=0.01 RD=0.07 RS=0.01)
+
+* F1 PTC (cold) + amplifier remote load (~50 mA at 12V)
+RF1   drain amp 0.3
+RLOAD amp 0 240
+
+.options gmin=1e-10
+.control
+dc Vhealth 0 1 1
+let vsg = v(p12)-v(gate)
+* index 0 = UNHEALTHY (Q2 off), index 1 = HEALTHY (Q2 on)
+let vg_off  = v(gate)[0]
+let vg_on   = v(gate)[1]
+let vsg_off = vsg[0]
+let vsg_on  = vsg[1]
+let amp_off = v(amp)[0]
+let amp_on  = v(amp)[1]
+echo "UNHEALTHY: Vgate=$&vg_off Vsg=$&vsg_off AMP_REM=$&amp_off" > ./tb_gate_driver.out
+echo "HEALTHY  : Vgate=$&vg_on Vsg=$&vsg_on AMP_REM=$&amp_on" >> ./tb_gate_driver.out
+quit
+.endc
+.end

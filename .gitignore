@@ -1,0 +1,21 @@
+# KiCad local and backup files
+*.kicad_prl
+*.kicad_pcb-bak
+*.kicad_sch-bak
+*.lck
+*-backups/
+fp-info-cache
+
+# KiCad local history repository
+.history/
+
+# Regenerable analysis output
+analysis*/
+
+# Redundant vendor archive; the required KiCad assets are in libs/
+libs/LIB_870575873001.zip
+
+# Operating-system metadata
+.DS_Store
+Thumbs.db
+Desktop.ini

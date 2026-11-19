@@ -1,0 +1,35 @@
+* Auto-generated testbench for NPN BJT: Q2 (2N3904)
+* Load type: resistive, 2 base resistor(s)
+* Model: generic NPN (hFE=200)
+
+
+* Generic semiconductor models for Phase 1 simulation
+.model D_GENERIC D(IS=1e-14 N=1.05 BV=100 IBV=1e-10)
+.model D_SCHOTTKY D(IS=1e-6 N=1.05 BV=40 IBV=1e-8 RS=0.5)
+.model D_ZENER3V3 D(IS=1e-14 N=1.05 BV=3.3 IBV=5e-3)
+.model D_ZENER5V1 D(IS=1e-14 N=1.05 BV=5.1 IBV=5e-3)
+.model NPN_GENERIC NPN(IS=1e-14 BF=200 VAF=100 CJC=5p CJE=10p TF=0.3n)
+.model PNP_GENERIC PNP(IS=1e-14 BF=200 VAF=100 CJC=5p CJE=10p TF=0.6n)
+.model NMOS_GENERIC NMOS(VTO=1.5 KP=1e-2 LAMBDA=0.01)
+.model PMOS_GENERIC PMOS(VTO=-1.5 KP=5e-3 LAMBDA=0.01)
+
+
+VCC vcc 0 DC 3.3
+
+* NPN: collector to load, emitter to GND
+RLOAD vcc Q2_COLL 1k
+QQ2 Q2_COLL Q2_BASE 0 NPN_GENERIC
+
+* Base drive: sweep from 0V (off) to 1V (on)
+Vbase Q2_BASE 0 DC 0
+
+.control
+dc Vbase 0 1 0.01
+let ic = abs(i(VCC))
+meas dc vbe_on when ic=1m
+let ic_on = vecmax(ic)
+echo "vbe_on=$&vbe_on ic_on=$&ic_on vcc=3.3" > ./spice_runs/transistor-circuit_Q2.out
+quit
+.endc
+
+.end

@@ -1,0 +1,17 @@
+* Auto-generated testbench for voltage divider: R2/R1
+* Expected Vout = 3.3 * 0.993246 = 3.2777 V
+* Model: ideal passives (exact, unloaded)
+
+VIN DSP_HB 0 DC 3.3
+R2 DSP_HB DSP_HB_3V3 680
+R1 DSP_HB_3V3 0 100k
+
+.control
+op 
+let vout_sim = v(DSP_HB_3V3)
+let error_pct = abs(vout_sim - 3.2777117999999996) / 3.2777117999999996 * 100
+echo "vout_sim=$&vout_sim error_pct=$&error_pct expected=3.2777117999999996" > ./spice_runs/voltage-divider_R2_R1.out
+quit
+.endc
+
+.end

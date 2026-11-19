@@ -1,0 +1,29 @@
+* tb_opto_led_drive.cir
+* DHW watchdog -- LTV-817 input LED drive current (U1 heartbeat / U2 fault paths)
+* Topology: DSP 3.3V GPIO -> R2/R10 (680R) -> LTV-817 IR LED -> DSP_GND
+* Question: is the opto LED drive current adequate (and not excessive) across the
+*           3.0-3.6V GPIO range, given LTV-817 CTR derates at low If?
+* Trust: MEDIUM -- generic IR-LED model (LTV-817-specific Vf not modelled).
+*        The 680R series resistor and Ohm's-law current are exact; only Vf is approximate.
+
+Vgpio  hb_3v3 0 3.3
+R2     hb_3v3 led_a 680
+* Generic GaAs IR LED (LTV-817 input), Vf ~1.2-1.3V at a few mA
+DLED   led_a 0 IRLED
+* tuned so Vf ~ 1.2 V at a few mA (LTV-817 GaAs IR input LED, typ Vf 1.2-1.4 V)
+.model IRLED D(IS=1e-13 N=1.9 RS=2 EG=1.4)
+
+.control
+* Sweep across the DSP GPIO tolerance band: index 0=3.0V 1=3.3V 2=3.6V
+dc Vgpio 3.0 3.6 0.3
+let i_led = (v(hb_3v3)-v(led_a))*1000/680
+let vf3v0 = v(led_a)[0]
+let vf3v3 = v(led_a)[1]
+let vf3v6 = v(led_a)[2]
+let if3v0 = i_led[0]
+let if3v3 = i_led[1]
+let if3v6 = i_led[2]
+echo "If_mA @3.0V=$&if3v0  @3.3V=$&if3v3  @3.6V=$&if3v6   Vf_V @3.3V=$&vf3v3" > ./tb_opto_led_drive.out
+quit
+.endc
+.end

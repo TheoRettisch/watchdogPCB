@@ -1,0 +1,46 @@
+* tb_monostable_timeout.cir
+* DHW watchdog -- CD74HC123E retriggerable monostable hardware timeout
+* (behavioral SYSTEM model -- the auto-skill skips IC1: no HC123 device model)
+*
+* Real timing components on IC1 section 1:  R6 = 200k (Vcc->1RxCx),  C1 = 1uF (1Cx-1RxCx)
+*   datasheet pulse width  tw = 0.45 * R6 * C1 = 0.45 * 200k * 1uF = 90 ms
+*   RC of the timing node  = R6*C1 = 200 ms ; HC123 internal trip ~ (1-e^-0.45)=36.2% of Vcc
+*
+* Heartbeat in: HB_ISO_LOW idles HIGH (R7 10k pullup to +5V), the U1 opto dips it
+*   LOW on each 20 Hz heartbeat pulse (5 ms low, 50 ms period). The ~1A input
+*   retriggers the one-shot on each pulse. This model reproduces tw and retrigger
+*   using the REAL R6/C1: a switch discharges Cx while HB is low; Cx then charges
+*   through R6; MONO_Q is high while V(cx) is below the internal threshold.
+*
+* What this verifies:
+*   1) With 20 Hz (50 ms < 90 ms) heartbeat, MONO_Q stays HIGH (amp stays armed).
+*   2) When the heartbeat stops, MONO_Q drops ~90 ms after the last trigger (fail-off).
+* Trust: behavioral. tw and the 50ms-vs-90ms margin are governed by the real R6/C1
+*        and are accurate; exact HC123 internal node shapes are idealized.
+
+.param VCC=5 R6=200k C1=1u
+.param VTH={0.362*VCC}
+
+V5    vcc 0 {VCC}
+Vhb   hb  0 PWL(0.000000 5.0  0.019990 5.0  0.020000 0.0  0.025000 0.0  0.025010 5.0  0.069990 5.0  0.070000 0.0  0.075000 0.0  0.075010 5.0  0.119990 5.0  0.120000 0.0  0.125000 0.0  0.125010 5.0  0.169990 5.0  0.170000 0.0  0.175000 0.0  0.175010 5.0  0.219990 5.0  0.220000 0.0  0.225000 0.0  0.225010 5.0  0.269990 5.0  0.270000 0.0  0.275000 0.0  0.275010 5.0  0.500000 5.0)
+
+* Timing node: Cx charges through R6 from Vcc; trigger (HB low) discharges it
+R6    vcc cx {R6}
+C1    cx  0 {C1} IC=0
+Btrg  trg 0 V = 5 - V(hb)              ; trg high while HB is low (trigger asserted)
+Sdis  cx  0 trg 0 TRGSW
+.model TRGSW SW(Ron=50 Roff=1e9 Vt=2.5 Vh=0)
+
+* Monostable output: HIGH while timing node below internal threshold
+Bq    mono_q 0 V = (V(cx) < VTH) ? VCC : 0
+
+.ic v(cx)=0
+.control
+tran 0.2m 0.5 uic
+meas tran t_fall when v(mono_q)=2.5 fall=1
+meas tran q_armed find v(mono_q) at=0.2
+let tw_calc = 0.45*200000*1e-6
+echo "tw_calc_s=$&tw_calc  q_armed_at_200ms_V=$&q_armed  mono_q_fall_s=$&t_fall" > ./tb_monostable_timeout.out
+quit
+.endc
+.end
